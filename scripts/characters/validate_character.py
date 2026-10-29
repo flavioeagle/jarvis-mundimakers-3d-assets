@@ -1,5 +1,5 @@
 """Valida GLB bruto de personagem reimportando no Blender: rig, pesos, anexos, materiais, animacoes.
-Uso: blender -b --factory-startup --python-exit-code 1 --python scripts/characters/validate_character.py -- <raw.glb> <Nome>
+Uso: blender -b --factory-startup --python-exit-code 1 --python scripts/characters/validate_character.py -- <raw.glb> <Nome> [clay|voxel]
 """
 import json
 import math
@@ -11,10 +11,17 @@ import bpy
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lib"))
 from chibi import BONES  # noqa: E402
 
-path, name = sys.argv[sys.argv.index("--") + 1:][:2]
+args = sys.argv[sys.argv.index("--") + 1:]
+path, name = args[:2]
+kind = args[2] if len(args) > 2 else "clay"
 ANIMS = ["Idle", "Working", "AwaitingApproval", "Done"]
-RIGID = {"head": [f"{name}_Hair", "Head", "Nose"], "eye.L": ["Eye.L", "Lash.L"], "eye.R": ["Eye.R", "Lash.R"],
-         "mouth": ["Mouth"], "brow.L": ["Brow.L"], "brow.R": ["Brow.R"]}
+if kind == "voxel":
+    RIGID = {"head": [f"{name}_Head"], "eye.L": ["Eye.L"], "eye.R": ["Eye.R"], "mouth": ["Mouth"],
+             "brow.L": ["Brow.L"], "brow.R": ["Brow.R"], "chest": [f"{name}_Torso"],
+             "upperarm.L": [f"{name}_UpperArm.L"], "hand.R": [f"{name}_Hand.R"], "foot.L": [f"{name}_Boot.L"]}
+else:
+    RIGID = {"head": [f"{name}_Hair", "Head", "Nose"], "eye.L": ["Eye.L", "Lash.L"], "eye.R": ["Eye.R", "Lash.R"],
+             "mouth": ["Mouth"], "brow.L": ["Brow.L"], "brow.R": ["Brow.R"]}
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=path)
@@ -30,7 +37,7 @@ if missing:
     fail.append(f"ossos faltando: {sorted(missing)}")
 
 skinned = [o for o in objs.values() if o.type == "MESH" and any(m.type == "ARMATURE" for m in o.modifiers)]
-if len(skinned) < 3:
+if kind == "clay" and len(skinned) < 3:
     fail.append(f"poucas malhas com skin: {len(skinned)}")
 unweighted = 0
 for o in skinned:
@@ -67,14 +74,20 @@ for an in ANIMS:
             break
 
 meshes = [o for o in objs.values() if o.type == "MESH"]
-zs = [ (o.matrix_world @ v.co).z for o in skinned for v in o.data.vertices]
-height_body = max(zs) - min(zs)
+dio = objs.get(f"{name}_Diorama")
+if dio is None:
+    fail.append("sem no _Diorama")
+elif arm.parent != dio:
+    fail.append("armature fora do diorama")
+glass = bpy.data.materials.get("Vitrine_Glass")
+if glass is None or glass.blend_method != "BLEND":
+    fail.append("vidro da vitrine sem alpha blend")
 mats = sorted({m.name for o in meshes for m in o.data.materials if m})
 report = {
     "file": path, "bones": len(bones), "skinned_meshes": len(skinned), "meshes": len(meshes),
     "triangles": sum(sum(len(p.vertices) - 2 for p in o.data.polygons) for o in meshes),
     "materials": len(mats), "animations": {an: round(acts[an].frame_range[1] - acts[an].frame_range[0] + 1) for an in ANIMS if an in acts},
-    "skinned_height_m": round(height_body, 3), "fail": fail,
+    "kind": kind, "fail": fail,
 }
 print("REPORT " + json.dumps(report))
 if fail:
