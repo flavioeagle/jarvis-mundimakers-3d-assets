@@ -11,6 +11,8 @@ bash scripts/setup.sh --with-gltf-transform   # verifica versões e só instala 
 ## Assets
 | Asset | Arquivo | Docs |
 |---|---|---|
+| **Muse (funcionária de IA) v1** | `assets/characters/muse_v1.glb` (rig 23 ossos, 4 animações) | [`docs/characters-v1.md`](docs/characters-v1.md) |
+| **Produção (técnico de IA) v1** | `assets/characters/producao_v1.glb` (rig 23 ossos, 4 animações, CC2 na bancada) | [`docs/characters-v1.md`](docs/characters-v1.md) |
 | **Elegoo CC2 (estilo) v1** | `assets/printers/elegoo_cc2_v1.glb` (172 KB, meshopt, 24 malhas, 8 pivôs) | [`docs/elegoo-cc2-v1.md`](docs/elegoo-cc2-v1.md) |
 | Impressora 3D fechada v001 (protótipo) | `assets/printer/printer_proto_v001.glb` (164 KB, 14 malhas) | [`docs/printer-prototype.md`](docs/printer-prototype.md) |
 | Cubo de teste 10 cm | `assets/test/cube_10cm.glb` | abaixo |

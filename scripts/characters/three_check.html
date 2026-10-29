@@ -1,0 +1,55 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>three check</title>
+<style>html,body{margin:0;background:#8a8f99}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"/.tools/node_modules/three/build/three.module.js","three/addons/":"/.tools/node_modules/three/examples/jsm/"}}</script>
+</head><body><script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const q = new URLSearchParams(location.search);
+const size = +(q.get('size') || 700);
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(size, size);
+renderer.toneMapping = THREE.AgXToneMapping;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+scene.background = new THREE.Color(0x8a8f99);
+const sun = new THREE.DirectionalLight(0xffffff, 2.0); sun.position.set(-1, 2, 1.5); scene.add(sun);
+
+const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+try {
+  const gltf = await loader.loadAsync(q.get('glb'));
+  scene.add(gltf.scene);
+  const clips = Object.fromEntries(gltf.animations.map((c) => [c.name, c.duration]));
+  const mixer = new THREE.AnimationMixer(gltf.scene);
+  if (q.get('anim')) {
+    mixer.clipAction(THREE.AnimationClip.findByName(gltf.animations, q.get('anim'))).play();
+    mixer.setTime(+(q.get('t') || 0));
+  }
+  gltf.scene.updateMatrixWorld(true);
+  const box = new THREE.Box3(), charBox = new THREE.Box3();
+  let skinned = 0, tris = 0;
+  gltf.scene.traverse((o) => {
+    if (!o.isMesh) return;
+    tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3;
+    if (o.isSkinnedMesh) {
+      skinned++;
+      o.computeBoundingBox();
+      const b = o.boundingBox.clone().applyMatrix4(o.matrixWorld);
+      box.union(b); charBox.union(b);
+    } else box.expandByObject(o, true);
+  });
+  const hide = q.get('hide');
+  if (hide) gltf.scene.traverse((o) => { if (o.name.endsWith(hide)) o.visible = false; });
+  const s = box.getSize(new THREE.Vector3()), c = charBox.getCenter(new THREE.Vector3());
+  const cam = new THREE.PerspectiveCamera(35, 1, 0.01, 50);
+  cam.position.set(c.x + 0.6, c.y + 0.45, c.z + 1.9);
+  cam.lookAt(c.x, c.y + 0.1, c.z);
+  renderer.render(scene, cam);
+  window.__result = { ok: true, clips, skinned, triangles: Math.round(tris),
+    bbox_m: s.toArray().map((v) => +v.toFixed(3)), skinned_bbox_m: charBox.getSize(new THREE.Vector3()).toArray().map((v) => +v.toFixed(3)) };
+} catch (e) { window.__result = { ok: false, error: String(e) }; }
+</script></body></html>

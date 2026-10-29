@@ -11,7 +11,7 @@ MAT = {}
 
 
 def material(name, base, metallic=0.0, rough=0.5, transmission=0.0, ior=1.5,
-             emission=None, strength=0.0, coat=0.0):
+             emission=None, strength=0.0, coat=0.0, sheen=0.0):
     m = bpy.data.materials.new(name)
     m.use_nodes = True
     m.use_backface_culling = True          # glTF doubleSided=false (malhas fechadas)
@@ -22,6 +22,7 @@ def material(name, base, metallic=0.0, rough=0.5, transmission=0.0, ior=1.5,
     p.inputs["Transmission Weight"].default_value = transmission
     p.inputs["IOR"].default_value = ior
     p.inputs["Coat Weight"].default_value = coat
+    p.inputs["Sheen Weight"].default_value = sheen        # tecidos -> KHR_materials_sheen
     if emission:
         p.inputs["Emission Color"].default_value = (*emission, 1.0)
         p.inputs["Emission Strength"].default_value = strength
@@ -55,6 +56,12 @@ class Part:
             v.co = m @ v.co
         self._place(res["verts"], loc, rot, mat)
 
+    def sphere(self, r, loc, scale=(1, 1, 1), mat=None, rot=None, seg=24, rings=12):
+        res = bmesh.ops.create_uvsphere(self.bm, u_segments=seg, v_segments=rings, radius=r)
+        for v in res["verts"]:
+            v.co = Vector((v.co.x * scale[0], v.co.y * scale[1], v.co.z * scale[2]))
+        self._place(res["verts"], loc, rot, mat)
+
     def empty(self):
         return len(self.bm.verts) == 0
 
@@ -76,8 +83,9 @@ class Part:
             b.width, b.segments, b.limit_method = bevel, segments, "ANGLE"
             if smooth:
                 me.use_auto_smooth = True          # Blender 4.0; 4.1+ usa Smooth by Angle
-                me.polygons.foreach_set("use_smooth", [True] * len(me.polygons))
                 b.harden_normals = True
+        if smooth:
+            me.polygons.foreach_set("use_smooth", [True] * len(me.polygons))
         return ob
 
 
