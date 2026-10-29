@@ -1,5 +1,5 @@
 """Previa do GLB com Cycles em CPU (sem GPU). Renderiza o arquivo exportado, nao a cena-fonte.
-Uso: blender -b --factory-startup --python scripts/printer/render_preview.py -- <arquivo.glb> <saida_dir> [samples]
+Uso: blender -b --factory-startup --python scripts/printer/render_preview.py -- <arquivo.glb> <saida_dir> [samples] [JPEG|PNG]
 """
 import math
 import os
@@ -11,6 +11,7 @@ from mathutils import Vector
 args = sys.argv[sys.argv.index("--") + 1:]
 glb, out_dir = args[0], args[1]
 samples = int(args[2]) if len(args) > 2 else 96
+fmt = args[3].upper() if len(args) > 3 else "JPEG"
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=glb)
@@ -24,8 +25,9 @@ scene.cycles.caustics_reflective = scene.cycles.caustics_refractive = False
 scene.cycles.blur_glossy = 1.0
 scene.cycles.sample_clamp_indirect = 3.0
 scene.render.resolution_x = scene.render.resolution_y = 900
-scene.render.image_settings.file_format = "JPEG"
+scene.render.image_settings.file_format = fmt
 scene.render.image_settings.quality = 88
+scene.render.image_settings.compression = 90
 scene.view_settings.view_transform = "AgX" if "AgX" in [i.identifier for i in
     scene.view_settings.bl_rna.properties["view_transform"].enum_items] else "Filmic"
 
@@ -71,6 +73,6 @@ os.makedirs(out_dir, exist_ok=True)
 for name, loc in views.items():
     cam.location = loc
     cam.rotation_euler = (Vector((0, 0, 0.24)) - Vector(loc)).to_track_quat("-Z", "Y").to_euler()
-    scene.render.filepath = os.path.join(out_dir, f"{os.path.splitext(os.path.basename(glb))[0]}_{name}.jpg")
+    scene.render.filepath = os.path.join(out_dir, f"{os.path.splitext(os.path.basename(glb))[0]}_{name}.{'png' if fmt == 'PNG' else 'jpg'}")
     bpy.ops.render.render(write_still=True)
     print("RENDERED", scene.render.filepath)

@@ -11,10 +11,11 @@ bash scripts/setup.sh --with-gltf-transform   # verifica versões e só instala 
 ## Assets
 | Asset | Arquivo | Docs |
 |---|---|---|
-| Impressora 3D fechada v001 | `assets/printer/printer_proto_v001.glb` (164 KB, 14 malhas) | [`docs/printer-prototype.md`](docs/printer-prototype.md) |
+| **Elegoo CC2 (estilo) v1** | `assets/printers/elegoo_cc2_v1.glb` (172 KB, meshopt, 24 malhas, 8 pivôs) | [`docs/elegoo-cc2-v1.md`](docs/elegoo-cc2-v1.md) |
+| Impressora 3D fechada v001 (protótipo) | `assets/printer/printer_proto_v001.glb` (164 KB, 14 malhas) | [`docs/printer-prototype.md`](docs/printer-prototype.md) |
 | Cubo de teste 10 cm | `assets/test/cube_10cm.glb` | abaixo |
 
-![Prévia](docs/previews/printer_proto_v001_front34.jpg)
+![Prévia](docs/previews/elegoo_cc2_v1_front34.png)
 
 ## Estrutura
 | Pasta | Conteúdo |
