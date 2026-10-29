@@ -2,10 +2,27 @@
 
 Pipeline de assets 3D do projeto Jarvis Mundimakers, gerados com Blender headless.
 
+## Setup rápido (sessão nova)
+```bash
+bash scripts/setup.sh --with-gltf-transform   # verifica versões e só instala o que falta
+```
+`gltf-transform` fica em `.tools/` (local, no `.gitignore`), nunca global.
+
+## Assets
+| Asset | Arquivo | Docs |
+|---|---|---|
+| Impressora 3D fechada v001 | `assets/printer/printer_proto_v001.glb` (164 KB, 14 malhas) | [`docs/printer-prototype.md`](docs/printer-prototype.md) |
+| Cubo de teste 10 cm | `assets/test/cube_10cm.glb` | abaixo |
+
+![Prévia](docs/previews/printer_proto_v001_front34.jpg)
+
 ## Estrutura
 | Pasta | Conteúdo |
 |---|---|
-| `scripts/` | Scripts Python executados pelo Blender (`--python`) |
+| `scripts/` | `setup.sh` e scripts Python executados pelo Blender (`--python`) |
+| `scripts/printer/` | build, validação e prévia da impressora |
+| `assets/printer/` | GLBs da impressora (versionados `_vNNN`) |
+| `docs/previews/` | Renders de prévia (Cycles CPU) |
 | `assets/test/` | Assets de teste do pipeline |
 | `docs/` | Logs de setup e notas técnicas |
 
@@ -21,7 +38,16 @@ Pipeline de assets 3D do projeto Jarvis Mundimakers, gerados com Blender headles
 
 Detalhes da instalação: [`docs/setup-log.md`](docs/setup-log.md).
 
-## Comandos
+## Comandos — impressora
+```bash
+G=assets/printer/printer_proto_v001.glb
+blender -b --factory-startup --python-exit-code 1 --python scripts/printer/build_printer.py -- $G
+blender -b --factory-startup --python-exit-code 1 --python scripts/printer/validate_printer.py -- $G
+.tools/node_modules/.bin/gltf-transform validate $G
+blender -b --factory-startup --python-exit-code 1 --python scripts/printer/render_preview.py -- $G docs/previews 96
+```
+
+## Comandos — cubo de teste
 ```bash
 # Verificar Blender sem interface
 blender -b --version
